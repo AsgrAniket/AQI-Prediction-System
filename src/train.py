@@ -1,6 +1,7 @@
 import pandas as pd
 import pickle
 import os
+import joblib
 
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
@@ -40,7 +41,13 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 # Models
 lr = LinearRegression()
-rf = RandomForestRegressor()
+rf = RandomForestRegressor(
+    n_estimators=80,
+    max_depth=20,
+    random_state=42,
+    n_jobs=-1
+)
+
 
 lr.fit(X_train, y_train)
 rf.fit(X_train, y_train)
@@ -58,5 +65,6 @@ best_model = rf if rf_r2 > lr_r2 else lr
 # Save model
 with open(model_path, 'wb') as f:
     pickle.dump(best_model, f)
+    joblib.dump(best_model, model_path, compress=3)
 
 print("✅ Model saved successfully!")

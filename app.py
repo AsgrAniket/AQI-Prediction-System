@@ -3,6 +3,7 @@ import numpy as np
 import pickle
 import sys
 import os
+import joblib
 
 sys.path.append(os.path.join(os.path.dirname(__file__), 'src'))
 
@@ -14,6 +15,7 @@ model_path = os.path.join(BASE_DIR, 'model', 'aqi_model.pkl')
 
 # Load model
 model = pickle.load(open(model_path, 'rb'))
+model = joblib.load(model_path)
 
 st.title("Air Quality Index Prediction System")
 
