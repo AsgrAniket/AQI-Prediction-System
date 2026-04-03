@@ -14,8 +14,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 model_path = os.path.join(BASE_DIR, 'model', 'aqi_model.pkl')
 
 # Load model
-model = pickle.load(open(model_path, 'rb'))
-model = joblib.load(model_path)
+model = joblib.load('model/aqi_model.joblib')
+
 
 st.title("Air Quality Index Prediction System")
 

@@ -1,5 +1,4 @@
 import pandas as pd
-import pickle
 import os
 import joblib
 
@@ -11,7 +10,8 @@ from sklearn.metrics import r2_score
 # Fix paths
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 data_path = os.path.join(BASE_DIR, 'data', 'aqi_data.csv')
-model_path = os.path.join(BASE_DIR, 'model', 'aqi_model.pkl')
+model_path = os.path.join(os.path.dirname(__file__), '../model/aqi_model.joblib')
+
 
 # Load data
 df = pd.read_csv(data_path)
@@ -63,8 +63,6 @@ print("Random Forest R2:", rf_r2)
 best_model = rf if rf_r2 > lr_r2 else lr
 
 # Save model
-with open(model_path, 'wb') as f:
-    pickle.dump(best_model, f)
-    joblib.dump(best_model, model_path, compress=3)
+joblib.dump(best_model, model_path)
 
 print("✅ Model saved successfully!")
