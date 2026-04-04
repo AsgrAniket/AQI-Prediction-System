@@ -68,9 +68,9 @@ best_model = rf if rf_r2 > lr_r2 else lr
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(X)
 
-model.fit(X_scaled, y)
+best_model.fit(X_scaled, y)
 
-joblib.dump(model, "model/aqi_model.joblib")
+joblib.dump(best_model, "model/aqi_model.joblib")
 joblib.dump(scaler, "model/scaler.joblib")
 
 print("✅ Model + Scaler saved!")
