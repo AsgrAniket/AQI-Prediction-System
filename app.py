@@ -3,15 +3,23 @@ import numpy as np
 import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
+import os
 
-# Page config (ONLY ONCE)
+# ---------------- CONFIG ----------------
 st.set_page_config(page_title="AQI Predictor", layout="wide")
 
-# Load model + scaler
-model = joblib.load('model/aqi_model.joblib')
-scaler = joblib.load('model/scaler.joblib')
+# ---------------- SAFE MODEL LOADING ----------------
+MODEL_PATH = "model/aqi_model.joblib"
+SCALER_PATH = "model/scaler.joblib"
 
-# Functions
+if not os.path.exists(MODEL_PATH) or not os.path.exists(SCALER_PATH):
+    st.error("❌ Model or scaler file not found. Please check deployment.")
+    st.stop()
+
+model = joblib.load(MODEL_PATH)
+scaler = joblib.load(SCALER_PATH)
+
+# ---------------- FUNCTIONS ----------------
 def get_aqi_category(aqi):
     if aqi <= 50:
         return "Good"
@@ -38,11 +46,11 @@ def health_advice(aqi):
     else:
         return "Hazardous air! Avoid going outside."
 
-# Title
+# ---------------- UI ----------------
 st.title("🌍 Air Quality Index Prediction System")
 st.markdown("Predict AQI based on pollutant levels using Machine Learning")
 
-# Sample data button
+# ---------------- SAMPLE DATA ----------------
 if st.button("⚡ Use Sample Data"):
     st.session_state.pm25 = 120.0
     st.session_state.pm10 = 180.0
@@ -51,7 +59,7 @@ if st.button("⚡ Use Sample Data"):
     st.session_state.co = 50.0
     st.session_state.o3 = 60.0
 
-# Inputs
+# ---------------- INPUT ----------------
 col1, col2 = st.columns(2)
 
 with col1:
@@ -64,10 +72,15 @@ with col2:
     co = st.number_input("CO", min_value=0.0, key="co")
     o3 = st.number_input("O3", min_value=0.0, key="o3")
 
-# Predict
+# ---------------- VALIDATION ----------------
+if pm25 == 0 and pm10 == 0 and no2 == 0:
+    st.warning("⚠️ Enter meaningful pollutant values")
+
+# ---------------- PREDICTION ----------------
 if st.button("🚀 Predict AQI"):
 
     input_data = np.array([[pm25, pm10, no2, so2, co, o3]])
+
     input_scaled = scaler.transform(input_data)
 
     with st.spinner("Predicting AQI..."):
@@ -86,7 +99,7 @@ if st.button("🚀 Predict AQI"):
     with col4:
         st.metric("Category", category)
 
-    # Color indicator
+    # Color Output
     if prediction <= 50:
         st.success("Good 🟢")
     elif prediction <= 100:
@@ -94,9 +107,9 @@ if st.button("🚀 Predict AQI"):
     elif prediction <= 200:
         st.warning("Moderate 🟠")
     else:
-        st.error("Poor 🔴")
+        st.error("Poor / Severe 🔴")
 
-    # Chart
+    # ---------------- CHART ----------------
     st.subheader("📈 Pollutant Levels")
 
     df = pd.DataFrame({
@@ -106,11 +119,11 @@ if st.button("🚀 Predict AQI"):
 
     st.bar_chart(df.set_index("Pollutant"))
 
-    # Health Advice
+    # ---------------- HEALTH ----------------
     st.subheader("🩺 Health Advice")
     st.info(health_advice(prediction))
 
-    # Feature Importance
+    # ---------------- FEATURE IMPORTANCE ----------------
     if hasattr(model, "feature_importances_"):
         st.subheader("🧠 Feature Importance")
 
@@ -121,9 +134,14 @@ if st.button("🚀 Predict AQI"):
         ax.barh(features, importance)
         st.pyplot(fig)
 
-# Sidebar
+# ---------------- SIDEBAR ----------------
 st.sidebar.title("About")
 st.sidebar.info("""
 This project predicts AQI using Machine Learning.
-Built using Random Forest.
+
+Features:
+✔ Random Forest Model  
+✔ Real-time Prediction  
+✔ Health Suggestions  
+✔ Interactive Dashboard  
 """)
