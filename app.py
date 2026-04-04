@@ -16,7 +16,7 @@ CITIES = {
     "Chennai": (13.08, 80.27)
 }
 
-API_KEY = "55ee96835fdfc8300c15d5caf5083681"
+API_KEY = "555ee96835fdfc8300c15d5caf5083681af5083681"
 
 def get_live_aqi(lat, lon):
     url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
