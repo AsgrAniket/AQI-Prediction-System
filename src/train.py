@@ -32,7 +32,7 @@ df = df.fillna(df.mean(numeric_only=True))
 
 # ---------------- MODEL ---------------- #
 
-X = df.drop('AQI', axis=1)
+X = df[['PM2.5', 'PM10', 'NO2', 'SO2', 'CO', 'O3']]
 y = df['AQI']
 
 X_train, X_test, y_train, y_test = train_test_split(
