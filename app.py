@@ -22,17 +22,29 @@ def get_live_aqi(lat, lon):
     url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
     
     response = requests.get(url)
+    
+    if response.status_code != 200:
+        st.error("❌ API request failed")
+        st.stop()
+
     data = response.json()
+
+    # 🔥 DEBUG PRINT (remove later)
+    # st.write(data)
+
+    if "list" not in data:
+        st.error(f"❌ API Error: {data}")
+        st.stop()
 
     components = data["list"][0]["components"]
 
     return {
-        "pm25": components["pm2_5"],
-        "pm10": components["pm10"],
-        "no2": components["no2"],
-        "so2": components["so2"],
-        "co": components["co"],
-        "o3": components["o3"]
+        "pm25": components.get("pm2_5", 0),
+        "pm10": components.get("pm10", 0),
+        "no2": components.get("no2", 0),
+        "so2": components.get("so2", 0),
+        "co": components.get("co", 0),
+        "o3": components.get("o3", 0)
     }
 
 # ---------------- CONFIG ----------------
@@ -188,6 +200,7 @@ data = pd.DataFrame({
     city2: list(get_live_aqi(*CITIES[city2]).values())
 }, index=["PM2.5", "PM10", "NO2", "SO2", "CO", "O3"])
 
+st.write(data)
 st.bar_chart(data)
 
 # ---------------- SIDEBAR ----------------
@@ -201,3 +214,5 @@ Features:
 ✔ Health Suggestions  
 ✔ Interactive Dashboard  
 """)
+
+ 
