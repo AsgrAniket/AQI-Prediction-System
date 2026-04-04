@@ -5,6 +5,7 @@ import joblib
 from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.linear_model import LinearRegression
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import r2_score
 
 # Fix paths
@@ -63,6 +64,13 @@ print("Random Forest R2:", rf_r2)
 best_model = rf if rf_r2 > lr_r2 else lr
 
 # Save model
-joblib.dump(best_model, model_path)
 
-print("✅ Model saved successfully!")
+scaler = StandardScaler()
+X_scaled = scaler.fit_transform(X)
+
+model.fit(X_scaled, y)
+
+joblib.dump(model, "model/aqi_model.joblib")
+joblib.dump(scaler, "model/scaler.joblib")
+
+print("✅ Model + Scaler saved!")
