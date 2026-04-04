@@ -2,45 +2,82 @@ import streamlit as st
 import numpy as np
 import pandas as pd
 import joblib
-from src.utils import get_aqi_category
 import matplotlib.pyplot as plt
 
-# Page config
+# Page config (ONLY ONCE)
 st.set_page_config(page_title="AQI Predictor", layout="wide")
 
-# Load model
+# Load model + scaler
 model = joblib.load('model/aqi_model.joblib')
+scaler = joblib.load('model/scaler.joblib')
+
+# Functions
+def get_aqi_category(aqi):
+    if aqi <= 50:
+        return "Good"
+    elif aqi <= 100:
+        return "Satisfactory"
+    elif aqi <= 200:
+        return "Moderate"
+    elif aqi <= 300:
+        return "Poor"
+    elif aqi <= 400:
+        return "Very Poor"
+    else:
+        return "Severe"
+
+def health_advice(aqi):
+    if aqi <= 50:
+        return "Air quality is good. Enjoy outdoor activities."
+    elif aqi <= 100:
+        return "Sensitive people should limit prolonged outdoor exposure."
+    elif aqi <= 200:
+        return "Avoid outdoor exercise. Wear a mask."
+    elif aqi <= 300:
+        return "Stay indoors. Use air purifier if possible."
+    else:
+        return "Hazardous air! Avoid going outside."
 
 # Title
 st.title("🌍 Air Quality Index Prediction System")
 st.markdown("Predict AQI based on pollutant levels using Machine Learning")
 
-# Layout
+# Sample data button
+if st.button("⚡ Use Sample Data"):
+    st.session_state.pm25 = 120.0
+    st.session_state.pm10 = 180.0
+    st.session_state.no2 = 90.0
+    st.session_state.so2 = 40.0
+    st.session_state.co = 50.0
+    st.session_state.o3 = 60.0
+
+# Inputs
 col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("🧪 Input Pollutants")
-    pm25 = st.number_input("PM2.5", min_value=0.0)
-    pm10 = st.number_input("PM10", min_value=0.0)
-    no2 = st.number_input("NO2", min_value=0.0)
+    pm25 = st.number_input("PM2.5", min_value=0.0, key="pm25")
+    pm10 = st.number_input("PM10", min_value=0.0, key="pm10")
+    no2 = st.number_input("NO2", min_value=0.0, key="no2")
 
 with col2:
-    st.subheader("🧪 More Inputs")
-    so2 = st.number_input("SO2", min_value=0.0)
-    co = st.number_input("CO", min_value=0.0)
-    o3 = st.number_input("O3", min_value=0.0)
+    so2 = st.number_input("SO2", min_value=0.0, key="so2")
+    co = st.number_input("CO", min_value=0.0, key="co")
+    o3 = st.number_input("O3", min_value=0.0, key="o3")
 
-# Predict button
+# Predict
 if st.button("🚀 Predict AQI"):
 
     input_data = np.array([[pm25, pm10, no2, so2, co, o3]])
-    prediction = model.predict(input_data)[0]
+    input_scaled = scaler.transform(input_data)
+
+    with st.spinner("Predicting AQI..."):
+        prediction = model.predict(input_scaled)[0]
+
     category = get_aqi_category(prediction)
 
     st.markdown("---")
     st.subheader("📊 Results")
 
-    # Metrics
     col3, col4 = st.columns(2)
 
     with col3:
@@ -61,54 +98,32 @@ if st.button("🚀 Predict AQI"):
 
     # Chart
     st.subheader("📈 Pollutant Levels")
-    data = {
+
+    df = pd.DataFrame({
         "Pollutant": ["PM2.5", "PM10", "NO2", "SO2", "CO", "O3"],
         "Value": [pm25, pm10, no2, so2, co, o3]
-    }
+    })
 
-    df = pd.DataFrame(data)
     st.bar_chart(df.set_index("Pollutant"))
 
-    # Health suggestion
+    # Health Advice
     st.subheader("🩺 Health Advice")
+    st.info(health_advice(prediction))
 
-def health_advice(aqi):
-    if aqi <= 50:
-        return "Air quality is good. Enjoy outdoor activities."
-    elif aqi <= 100:
-        return "Sensitive people should limit prolonged outdoor exposure."
-    elif aqi <= 200:
-        return "Avoid outdoor exercise. Wear a mask."
-    elif aqi <= 300:
-        return "Stay indoors. Use air purifier if possible."
-    else:
-        return "Hazardous air! Avoid going outside."
+    # Feature Importance
+    if hasattr(model, "feature_importances_"):
+        st.subheader("🧠 Feature Importance")
 
-        st.info(health_advice(prediction))
+        importance = model.feature_importances_
+        features = ["PM2.5", "PM10", "NO2", "SO2", "CO", "O3"]
 
-        if st.button("Use Sample Data"):
-           PM25 = 120
-           PM10 = 180
-           NO2 = 90
+        fig, ax = plt.subplots()
+        ax.barh(features, importance)
+        st.pyplot(fig)
 
-#Add Feature Importance Graph
-importance = model.feature_importances_
-features = ["PM2.5", "PM10", "NO2", "SO2", "CO", "O3"]
-
-plt.barh(features, importance)
-st.pyplot(plt)
-
-
-#set page
-st.set_page_config(page_title="AQI Predictor", layout="wide")
-
-#Add Loader
-with st.spinner("Predicting AQI..."):
-    prediction = model.predict(input_scaled)
-
-#Add About Section
+# Sidebar
 st.sidebar.title("About")
 st.sidebar.info("""
 This project predicts AQI using Machine Learning.
-Built using Random Forest with 90% accuracy.
+Built using Random Forest.
 """)
