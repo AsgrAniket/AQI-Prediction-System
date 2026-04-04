@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import os
 import requests
 
-mode = st.radio("Select Mode", ["Manual Input", "Live City Data"])
 
 CITIES = {
     "Delhi": (28.61, 77.23),
@@ -15,37 +14,48 @@ CITIES = {
     "Bangalore": (12.97, 77.59),
     "Chennai": (13.08, 80.27)
 }
-# live_data = get_live_aqi(lat, lon)
+live_data = get_live_aqi(lat, lon)
+
+if live_data:
+    pm25 = live_data["pm25"]
+    pm10 = live_data["pm10"]
+    no2 = live_data["no2"]
+    so2 = live_data["so2"]
+    co = live_data["co"]
+    o3 = live_data["o3"]
+
+    st.success(f"Using live data for {city}")
+else:
+    st.warning("⚠️ Live API failed. Use manual input.")
+
 API_KEY = "555ee96835fdfc8300c15d5caf5083681af5083681"
 
 def get_live_aqi(lat, lon):
-    url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
-    
-    response = requests.get(url)
-    
-    if response.status_code != 200:
-        st.error("❌ API request failed")
-        st.stop()
+    try:
+        url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
+        response = requests.get(url, timeout=5)
 
-    data = response.json()
+        if response.status_code != 200:
+            return None
 
-    # 🔥 DEBUG PRINT (remove later)
-    # st.write(data)
+        data = response.json()
 
-    if "list" not in data:
-        st.error(f"❌ API Error: {data}")
-        st.stop()
+        if "list" not in data or len(data["list"]) == 0:
+            return None
 
-    components = data["list"][0]["components"]
+        comp = data["list"][0]["components"]
 
-    return {
-        "pm25": components.get("pm2_5", 0),
-        "pm10": components.get("pm10", 0),
-        "no2": components.get("no2", 0),
-        "so2": components.get("so2", 0),
-        "co": components.get("co", 0),
-        "o3": components.get("o3", 0)
-    }
+        return {
+            "pm25": comp.get("pm2_5", 0),
+            "pm10": comp.get("pm10", 0),
+            "no2": comp.get("no2", 0),
+            "so2": comp.get("so2", 0),
+            "co": comp.get("co", 0),
+            "o3": comp.get("o3", 0)
+        }
+
+    except Exception:
+        return None
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="AQI Predictor", layout="wide")
@@ -195,10 +205,18 @@ if mode == "Live City Data":
 city1 = st.selectbox("City 1", list(CITIES.keys()))
 city2 = st.selectbox("City 2", list(CITIES.keys()))
 
-data = pd.DataFrame({
-    city1: list(get_live_aqi(*CITIES[city1]).values()),
-    city2: list(get_live_aqi(*CITIES[city2]).values())
-}, index=["PM2.5", "PM10", "NO2", "SO2", "CO", "O3"])
+data1 = get_live_aqi(*CITIES[city1])
+data2 = get_live_aqi(*CITIES[city2])
+
+if data1 and data2:
+    df = pd.DataFrame({
+        city1: list(data1.values()),
+        city2: list(data2.values())
+    }, index=["PM2.5", "PM10", "NO2", "SO2", "CO", "O3"])
+
+    st.bar_chart(df)
+else:
+    st.warning("⚠️ Comparison unavailable due to API issue")
 
 st.write(data)
 st.bar_chart(data)
