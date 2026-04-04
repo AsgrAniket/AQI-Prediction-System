@@ -4,6 +4,36 @@ import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
 import os
+import requests
+
+mode = st.radio("Select Mode", ["Manual Input", "Live City Data"])
+
+CITIES = {
+    "Delhi": (28.61, 77.23),
+    "Mumbai": (19.07, 72.87),
+    "Ahmedabad": (23.02, 72.57),
+    "Bangalore": (12.97, 77.59),
+    "Chennai": (13.08, 80.27)
+}
+
+API_KEY = "55ee96835fdfc8300c15d5caf5083681"
+
+def get_live_aqi(lat, lon):
+    url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
+    
+    response = requests.get(url)
+    data = response.json()
+
+    components = data["list"][0]["components"]
+
+    return {
+        "pm25": components["pm2_5"],
+        "pm10": components["pm10"],
+        "no2": components["no2"],
+        "so2": components["so2"],
+        "co": components["co"],
+        "o3": components["o3"]
+    }
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="AQI Predictor", layout="wide")
@@ -133,6 +163,32 @@ if st.button("🚀 Predict AQI"):
         fig, ax = plt.subplots()
         ax.barh(features, importance)
         st.pyplot(fig)
+
+if mode == "Live City Data":
+    city = st.selectbox("Select City", list(CITIES.keys()))
+    
+    lat, lon = CITIES[city]
+    
+    live_data = get_live_aqi(lat, lon)
+
+    pm25 = live_data["pm25"]
+    pm10 = live_data["pm10"]
+    no2 = live_data["no2"]
+    so2 = live_data["so2"]
+    co = live_data["co"]
+    o3 = live_data["o3"]
+
+    st.success(f"Using live data for {city}")
+
+city1 = st.selectbox("City 1", list(CITIES.keys()))
+city2 = st.selectbox("City 2", list(CITIES.keys()))
+
+data = pd.DataFrame({
+    city1: list(get_live_aqi(*CITIES[city1]).values()),
+    city2: list(get_live_aqi(*CITIES[city2]).values())
+}, index=["PM2.5", "PM10", "NO2", "SO2", "CO", "O3"])
+
+st.bar_chart(data)
 
 # ---------------- SIDEBAR ----------------
 st.sidebar.title("About")
