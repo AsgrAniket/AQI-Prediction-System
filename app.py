@@ -13,7 +13,7 @@ MODEL_PATH = "model/aqi_model.joblib"
 SCALER_PATH = "model/scaler.joblib"
 
 if not os.path.exists(MODEL_PATH) or not os.path.exists(SCALER_PATH):
-    st.error("❌ Model or scaler file not found. Please check deployment.")
+    st.error("❌ Model or scaler file not found.")
     st.stop()
 
 model = joblib.load(MODEL_PATH)
@@ -21,34 +21,32 @@ scaler = joblib.load(SCALER_PATH)
 
 # ---------------- FUNCTIONS ----------------
 def get_aqi_category(aqi):
-    if aqi <= 50:
-        return "Good"
-    elif aqi <= 100:
-        return "Satisfactory"
-    elif aqi <= 200:
-        return "Moderate"
-    elif aqi <= 300:
-        return "Poor"
-    elif aqi <= 400:
-        return "Very Poor"
-    else:
-        return "Severe"
+    if aqi <= 50: return "Good"
+    elif aqi <= 100: return "Satisfactory"
+    elif aqi <= 200: return "Moderate"
+    elif aqi <= 300: return "Poor"
+    elif aqi <= 400: return "Very Poor"
+    else: return "Severe"
 
 def health_advice(aqi):
     if aqi <= 50:
         return "Air quality is good. Enjoy outdoor activities."
     elif aqi <= 100:
-        return "Sensitive people should limit prolonged outdoor exposure."
+        return "Sensitive people should limit prolonged exposure."
     elif aqi <= 200:
-        return "Avoid outdoor exercise. Wear a mask."
+        return "Avoid outdoor exercise. Consider a mask."
     elif aqi <= 300:
-        return "Stay indoors. Use air purifier if possible."
+        return "Stay indoors if possible."
     else:
         return "Hazardous air! Avoid going outside."
 
-# ---------------- UI ----------------
-st.title("🌍 Air Quality Index Prediction System")
-st.markdown("Predict AQI based on pollutant levels using Machine Learning")
+# ---------------- TITLE ----------------
+st.title("🌍 AQI Prediction Dashboard")
+st.markdown("Smart Air Quality Prediction using Machine Learning")
+
+# ---------------- SESSION STATE ----------------
+if "history" not in st.session_state:
+    st.session_state.history = []
 
 # ---------------- SAMPLE DATA ----------------
 if st.button("⚡ Use Sample Data"):
@@ -60,6 +58,8 @@ if st.button("⚡ Use Sample Data"):
     st.session_state.o3 = 60.0
 
 # ---------------- INPUT ----------------
+st.subheader("🧪 Enter Pollutant Levels")
+
 col1, col2 = st.columns(2)
 
 with col1:
@@ -74,7 +74,7 @@ with col2:
 
 # ---------------- VALIDATION ----------------
 if pm25 == 0 and pm10 == 0 and no2 == 0:
-    st.warning("⚠️ Enter meaningful pollutant values")
+    st.warning("⚠️ Enter realistic pollutant values")
 
 # ---------------- PREDICTION ----------------
 if st.button("🚀 Predict AQI"):
@@ -87,6 +87,12 @@ if st.button("🚀 Predict AQI"):
 
     category = get_aqi_category(prediction)
 
+    # Save history
+    st.session_state.history.append({
+        "AQI": round(prediction, 2),
+        "Category": category
+    })
+
     st.markdown("---")
     st.subheader("📊 Results")
 
@@ -98,7 +104,11 @@ if st.button("🚀 Predict AQI"):
     with col4:
         st.metric("Category", category)
 
-    # Color Output
+    # Risk Bar
+    risk = min(prediction / 500, 1.0)
+    st.progress(risk)
+
+    # Color Indicator
     if prediction <= 50:
         st.success("Good 🟢")
     elif prediction <= 100:
@@ -109,7 +119,7 @@ if st.button("🚀 Predict AQI"):
         st.error("Poor / Severe 🔴")
 
     # ---------------- CHART ----------------
-    st.subheader("📈 Pollutant Levels")
+    st.subheader("📈 Pollutant Breakdown")
 
     df = pd.DataFrame({
         "Pollutant": ["PM2.5", "PM10", "NO2", "SO2", "CO", "O3"],
@@ -133,14 +143,39 @@ if st.button("🚀 Predict AQI"):
         ax.barh(features, importance)
         st.pyplot(fig)
 
+    # ---------------- DOWNLOAD REPORT ----------------
+    report = f"""
+AQI Report
+
+AQI: {round(prediction, 2)}
+Category: {category}
+
+PM2.5: {pm25}
+PM10: {pm10}
+NO2: {no2}
+SO2: {so2}
+CO: {co}
+O3: {o3}
+"""
+
+    st.download_button("📄 Download Report", report)
+
+# ---------------- HISTORY ----------------
+if st.session_state.history:
+    st.subheader("📜 Prediction History")
+    history_df = pd.DataFrame(st.session_state.history)
+    st.dataframe(history_df)
+
 # ---------------- SIDEBAR ----------------
 st.sidebar.title("About")
 st.sidebar.info("""
-This project predicts AQI using Machine Learning.
+AQI Prediction System
 
-Features:
-✔ Random Forest Model  
-✔ AQI Prediction  
-✔ Health Suggestions  
+✔ Machine Learning Model  
 ✔ Interactive Dashboard  
+✔ Health Insights  
+✔ Downloadable Reports  
+✔ Prediction History  
+
+Built for real-world usability.
 """)
