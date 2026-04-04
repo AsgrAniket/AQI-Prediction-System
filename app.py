@@ -15,39 +15,37 @@ CITIES = {
     "Bangalore": (12.97, 77.59),
     "Chennai": (13.08, 80.27)
 }
-
 # live_data = get_live_aqi(lat, lon)
-# API_KEY = "555ee96835fdfc8300c15d5caf5083681af5083681" 
+API_KEY = "555ee96835fdfc8300c15d5caf5083681af5083681"
 
 def get_live_aqi(lat, lon):
-    try:
-        import requests
-        API_KEY = "your_api_key_here"
+    url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
+    
+    response = requests.get(url)
+    
+    if response.status_code != 200:
+        st.error("❌ API request failed")
+        st.stop()
 
-        url = f"http://api.openweathermap.org/data/2.5/air_pollution?lat={lat}&lon={lon}&appid={API_KEY}"
-        response = requests.get(url)
+    data = response.json()
 
-        if response.status_code != 200:
-            return None
+    # 🔥 DEBUG PRINT (remove later)
+    # st.write(data)
 
-        data = response.json()
+    if "list" not in data:
+        st.error(f"❌ API Error: {data}")
+        st.stop()
 
-        if "list" not in data or len(data["list"]) == 0:
-            return None
+    components = data["list"][0]["components"]
 
-        components = data["list"][0]["components"]
-        return components
-
-    except:
-        return None
-
-live_data = get_live_aqi(lat, lon)
-
-if live_data:
-    st.success("Live AQI data fetched!")
-    st.write(live_data)
-else:
-    st.warning("⚠️ Live AQI unavailable. Using manual input.")
+    return {
+        "pm25": components.get("pm2_5", 0),
+        "pm10": components.get("pm10", 0),
+        "no2": components.get("no2", 0),
+        "so2": components.get("so2", 0),
+        "co": components.get("co", 0),
+        "o3": components.get("o3", 0)
+    }
 
 # ---------------- CONFIG ----------------
 st.set_page_config(page_title="AQI Predictor", layout="wide")
