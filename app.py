@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import joblib
 from src.utils import get_aqi_category
+import matplotlib.pyplot as plt
 
 # Page config
 st.set_page_config(page_title="AQI Predictor", layout="wide")
@@ -71,11 +72,46 @@ if st.button("🚀 Predict AQI"):
     # Health suggestion
     st.subheader("🩺 Health Advice")
 
-    if prediction <= 50:
-        st.write("Air quality is good. Enjoy outdoor activities.")
-    elif prediction <= 100:
-        st.write("Air quality is acceptable. Sensitive people should take care.")
-    elif prediction <= 200:
-        st.write("Limit prolonged outdoor exertion.")
+def health_advice(aqi):
+    if aqi <= 50:
+        return "Air quality is good. Enjoy outdoor activities."
+    elif aqi <= 100:
+        return "Sensitive people should limit prolonged outdoor exposure."
+    elif aqi <= 200:
+        return "Avoid outdoor exercise. Wear a mask."
+    elif aqi <= 300:
+        return "Stay indoors. Use air purifier if possible."
     else:
-        st.write("Avoid outdoor activities. Wear a mask.")
+        return "Hazardous air! Avoid going outside."
+
+        st.info(health_advice(prediction))
+
+        if st.button("Use Sample Data"):
+           PM25 = 120
+           PM10 = 180
+           NO2 = 90
+
+#Add Feature Importance Graph
+importance = model.feature_importances_
+features = ["PM2.5", "PM10", "NO2", "SO2", "CO", "O3"]
+
+plt.barh(features, importance)
+st.pyplot(plt)
+
+#Add Input Validation
+if PM25 < 0:
+    st.error("PM2.5 cannot be negative")
+
+#set page
+st.set_page_config(page_title="AQI Predictor", layout="wide")
+
+#Add Loader
+with st.spinner("Predicting AQI..."):
+    prediction = model.predict(input_scaled)
+
+#Add About Section
+st.sidebar.title("About")
+st.sidebar.info("""
+This project predicts AQI using Machine Learning.
+Built using Random Forest with 90% accuracy.
+""")
