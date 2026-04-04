@@ -98,9 +98,6 @@ features = ["PM2.5", "PM10", "NO2", "SO2", "CO", "O3"]
 plt.barh(features, importance)
 st.pyplot(plt)
 
-#Add Input Validation
-if PM25 < 0:
-    st.error("PM2.5 cannot be negative")
 
 #set page
 st.set_page_config(page_title="AQI Predictor", layout="wide")
